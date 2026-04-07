@@ -31,7 +31,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Força a impressão das cores de fundo no PDF */
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
         }
@@ -64,7 +63,6 @@
             width: 100%;
             max-width: 1800px;
             display: grid;
-            /* Coluna da esquerda mais larga para aproveitar o espaço horizontal */
             grid-template-columns: 1.4fr 1fr; 
             gap: 2rem;
         }
@@ -156,7 +154,6 @@
             white-space: nowrap;
         }
 
-        /* Container para agrupar múltiplas imagens na mesma linha */
         .expense-images-group {
             display: flex;
             gap: 1rem;
@@ -170,7 +167,6 @@
             gap: 0.5rem;
         }
 
-        /* Slots maiores para melhor visibilidade no PDF */
         .mini-image-slot {
             width: 160px;
             height: 160px;
@@ -250,6 +246,32 @@
             cursor: zoom-in;
         }
 
+        /* Botão flutuante para exportar PDF */
+        .btn-print-float {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 86, 179, 0.4);
+            transition: transform 0.2s, background-color 0.2s;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-print-float:hover {
+            background-color: var(--secondary-blue);
+            transform: scale(1.05);
+        }
+
         /* Lightbox Modal */
         .modal {
             display: none;
@@ -320,27 +342,47 @@
             font-weight: bold;
         }
 
-        /* Ajustes específicos para garantir qualidade e layout no PDF */
+        /* ====== AJUSTES PARA IMPRESSÃO DE PDF ====== */
         @media print {
-            body { background-color: var(--bg-color); padding: 0; }
-            .container { max-width: 100%; gap: 1rem; }
-            .card { box-shadow: none; border: 1px solid var(--border-color); break-inside: avoid; }
+            /* Tira margens e fundos escuros do corpo */
+            @page { margin: 1cm; size: A4 landscape; } /* Sugestão: Paisagem acomoda melhor as duas colunas */
+            body { background-color: var(--card-bg); padding: 0; }
+            
+            /* Esconde itens interativos */
+            .btn-print-float, .btn-alterar { display: none !important; }
+            
+            /* Ajusta o container para ocupar toda a página sem scroll */
+            .container { max-width: 100%; gap: 1rem; display: flex; flex-direction: column; }
+            .left-column, .right-column { width: 100%; }
+            
+            /* Bordas mais limpas */
+            .card { box-shadow: none; border: 1px solid var(--border-color); page-break-inside: avoid; margin-bottom: 1rem; padding: 1rem;}
             input { border: 1px solid #ccc !important; border-radius: 4px; background: transparent !important; }
-            .total-card { background-color: var(--primary-blue) !important; color: white !important; }
+            
+            /* Garante que o Total fique visível e bonito */
+            .total-card { background-color: var(--primary-blue) !important; color: white !important; page-break-inside: avoid; }
             .total-card h2, .total-card .total-value { color: white !important; }
-            .btn-alterar { display: none !important; }
-            .mini-image-slot { border: 1px solid var(--secondary-blue); }
-            /* Mantém as imagens grandes no PDF */
-            .mini-image-slot { width: 150px; height: 150px; }
-            .expense-row { page-break-inside: avoid; }
+            
+            /* Evita quebras de página no meio de uma despesa */
+            .expense-row { page-break-inside: avoid; align-items: flex-start; }
+            
+            /* Aumenta o tamanho dos comprovantes no PDF para compensar a falta do clique */
+            .mini-image-slot { width: 220px; height: 220px; border: 1px solid var(--border-color); }
+            
+            /* Garante que as imagens do maps não sumam ou fiquem cortadas */
+            .image-slot { page-break-inside: avoid; }
+            .image-slot img { max-height: 400px; width: auto; object-fit: contain; }
         }
     </style>
 </head>
 <body>
 
+    <button class="btn-print-float" onclick="window.print()">🖨️ Exportar PDF</button>
+
     <header>
         <div>
             <h1>Relatório de Reembolso de Despesas</h1>
+            <p>Viagem ao Cliente - São Paulo / SP</p>
         </div>
         <img src="https://i.ibb.co/9k80Zhjk/oie-transparent.png" alt="Logo Contele Teams" class="logo">
     </header>
