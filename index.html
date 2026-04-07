@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Reembolso - Contele Teams</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --card-bg: #ffffff;
+            --primary-blue: #0056b3;
+            --secondary-blue: #007bff;
+            --light-blue: #e6f0fa;
+            --text-dark: #333333;
+            --text-light: #666666;
+            --border-color: #d1dfec;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Força a impressão das cores de fundo no PDF */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--card-bg);
+            padding: 1.5rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.08);
+            margin-bottom: 2rem;
+            border-top: 5px solid var(--primary-blue);
+        }
+
+        header h1 {
+            color: var(--primary-blue);
+            font-size: 2rem;
+        }
+
+        .logo {
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1800px;
+            display: grid;
+            /* Coluna da esquerda mais larga para aproveitar o espaço horizontal */
+            grid-template-columns: 1.4fr 1fr; 
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 12px rgba(0, 86, 179, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .card h2 {
+            color: var(--secondary-blue);
+            margin-bottom: 1.5rem;
+            font-size: 1.4rem;
+            border-bottom: 2px solid var(--light-blue);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--secondary-blue);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+        
+        input[readonly] {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            color: var(--primary-blue);
+            font-weight: bold;
+        }
+
+        .expense-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--light-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            gap: 2rem;
+        }
+
+        .expense-inputs {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .km-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1.2fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .km-grid div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .km-grid label {
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            white-space: nowrap;
+        }
+
+        /* Container para agrupar múltiplas imagens na mesma linha */
+        .expense-images-group {
+            display: flex;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+
+        .upload-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Slots maiores para melhor visibilidade no PDF */
+        .mini-image-slot {
+            width: 160px;
+            height: 160px;
+            flex-shrink: 0;
+            background-color: var(--card-bg);
+            border: 2px dashed var(--secondary-blue);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: var(--primary-blue);
+            font-size: 0.85rem;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .mini-image-slot:hover {
+            background-color: #d1e5f8;
+        }
+
+        .mini-image-slot img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            z-index: 2;
+            cursor: zoom-in;
+        }
+
+        .btn-alterar {
+            font-size: 0.75rem;
+            color: var(--secondary-blue);
+            cursor: pointer;
+            text-decoration: underline;
+            display: none; 
+        }
+
+        .image-slots-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .image-slot {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 2px dashed var(--secondary-blue);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+            color: var(--text-light);
+            cursor: pointer;
+        }
+
+        .image-slot span {
+            font-weight: bold;
+            color: var(--primary-blue);
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .image-slot img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            cursor: zoom-in;
+        }
+
+        /* Lightbox Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90vh;
+            margin-top: 5vh;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            animation: zoom 0.3s ease;
+        }
+
+        @keyframes zoom {
+            from {transform:scale(0.8)} 
+            to {transform:scale(1)}
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+        }
+
+        .total-card {
+            grid-column: 1 / -1;
+            background-color: var(--primary-blue);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0, 86, 179, 0.2);
+        }
+
+        .total-card h2 {
+            color: white;
+            border: none;
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .total-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        /* Ajustes específicos para garantir qualidade e layout no PDF */
+        @media print {
+            body { background-color: var(--bg-color); padding: 0; }
+            .container { max-width: 100%; gap: 1rem; }
+            .card { box-shadow: none; border: 1px solid var(--border-color); break-inside: avoid; }
+            input { border: 1px solid #ccc !important; border-radius: 4px; background: transparent !important; }
+            .total-card { background-color: var(--primary-blue) !important; color: white !important; }
+            .total-card h2, .total-card .total-value { color: white !important; }
+            .btn-alterar { display: none !important; }
+            .mini-image-slot { border: 1px solid var(--secondary-blue); }
+            /* Mantém as imagens grandes no PDF */
+            .mini-image-slot { width: 150px; height: 150px; }
+            .expense-row { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Relatório de Reembolso de Despesas</h1>
+        </div>
+        <img src="https://i.ibb.co/9k80Zhjk/oie-transparent.png" alt="Logo Contele Teams" class="logo">
+    </header>
+
+    <div class="container">
+        <div class="left-column">
+            <div class="card" style="margin-bottom: 2rem;">
+                <h2>Informações Gerais</h2>
+                <div class="form-group">
+                    <label>Nome do Colaborador</label>
+                    <input type="text" placeholder="Digite seu nome">
+                </div>
+                <div class="form-group">
+                    <label>Data da Viagem</label>
+                    <input type="date">
+                </div>
+                <div class="form-group">
+                    <label>Cliente / Motivo</label>
+                    <input type="text" placeholder="Nome do cliente visitado">
+                </div>
+                <div class="form-group">
+                    <label>Veículo Utilizado (Modelo / Placa)</label>
+                    <input type="text" placeholder="Ex: Chevrolet Onix / ABC-1234">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Despesas e Comprovantes</h2>
+                
+                <div class="expense-row">
+                    <div class="expense-inputs">
+                        <label>Combustível / Quilometragem</label>
+                        <div class="km-grid">
+                            <div>
+                                <label>Km Rodados</label>
+                                <input type="number" id="input-km" placeholder="0" step="0.1" min="0">
+                            </div>
+                            <div>
+                                <label>Consumo (Km/L)</label>
+                                <input type="number" id="input-kml" placeholder="Ex: 12" step="0.1" min="0">
+                            </div>
+                            <div>
+                                <label>Valor do Litro</label>
+                                <input type="number" id="input-litro" placeholder="R$ 0,00" step="0.01" min="0">
+                            </div>
+                            <div>
+                                <label>Valor Combustível</label>
+                                <input type="number" class="valor-despesa" id="total-combustivel" placeholder="R$ 0,00" readonly>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; color: var(--text-dark);">Posto de Abastecimento</label>
+                            <input type="text" placeholder="Nome/Local onde abasteceu">
+                        </div>
+                    </div>
+                    
+                    <div class="expense-images-group">
+                        <div class="upload-wrapper">
+                            <div class="mini-image-slot" id="box-km" onclick="triggerUpload('file-km')">
+                                <span id="txt-km">📁 Painel / Km</span>
+                                <img id="img-km" onclick="expandImage(event, this.src)">
+                            </div>
+                            <input type="file" id="file-km" style="display: none;" accept="image/*" onchange="previewImage(event, 'img-km', 'txt-km', 'btn-km')">
+                            <span class="btn-alterar" id="btn-km" onclick="triggerUpload('file-km')">Trocar Imagem</span>
+                        </div>
+
+                        <div class="upload-wrapper">
+                            <div class="mini-image-slot" id="box-recibo-posto" onclick="triggerUpload('file-recibo-posto')">
+                                <span id="txt-recibo-posto">📁 Recibo Posto</span>
+                                <img id="img-recibo-posto" onclick="expandImage(event, this.src)">
+                            </div>
+                            <input type="file" id="file-recibo-posto" style="display: none;" accept="image/*" onchange="previewImage(event, 'img-recibo-posto', 'txt-recibo-posto', 'btn-recibo-posto')">
+                            <span class="btn-alterar" id="btn-recibo-posto" onclick="triggerUpload('file-recibo-posto')">Trocar Imagem</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="expense-row">
+                    <div class="expense-inputs">
+                        <label>Pedágio</label>
+                        <input type="number" class="valor-despesa" placeholder="Valor em R$" step="0.01" min="0">
+                    </div>
+                    <div class="upload-wrapper">
+                        <div class="mini-image-slot" id="box-pedagio" onclick="triggerUpload('file-pedagio')">
+                            <span id="txt-pedagio">📁 Inserir Foto<br>Recibo</span>
+                            <img id="img-pedagio" onclick="expandImage(event, this.src)">
+                        </div>
+                        <input type="file" id="file-pedagio" style="display: none;" accept="image/*" onchange="previewImage(event, 'img-pedagio', 'txt-pedagio', 'btn-pedagio')">
+                        <span class="btn-alterar" id="btn-pedagio" onclick="triggerUpload('file-pedagio')">Trocar Imagem</span>
+                    </div>
+                </div>
+
+                <div class="expense-row">
+                    <div class="expense-inputs">
+                        <label>Estacionamento</label>
+                        <input type="number" class="valor-despesa" placeholder="Valor em R$" step="0.01" min="0">
+                    </div>
+                    <div class="upload-wrapper">
+                        <div class="mini-image-slot" id="box-estacionamento" onclick="triggerUpload('file-estacionamento')">
+                            <span id="txt-estacionamento">📁 Inserir Foto<br>Ticket</span>
+                            <img id="img-estacionamento" onclick="expandImage(event, this.src)">
+                        </div>
+                        <input type="file" id="file-estacionamento" style="display: none;" accept="image/*" onchange="previewImage(event, 'img-estacionamento', 'txt-estacionamento', 'btn-estacionamento')">
+                        <span class="btn-alterar" id="btn-estacionamento" onclick="triggerUpload('file-estacionamento')">Trocar Imagem</span>
+                    </div>
+                </div>
+
+                <div class="expense-row">
+                    <div class="expense-inputs">
+                        <label>Alimentação</label>
+                        <input type="number" class="valor-despesa" placeholder="Valor em R$" step="0.01" min="0">
+                    </div>
+                    <div class="upload-wrapper">
+                        <div class="mini-image-slot" id="box-alimentacao" onclick="triggerUpload('file-alimentacao')">
+                            <span id="txt-alimentacao">📁 Inserir Foto<br>Nota Fiscal</span>
+                            <img id="img-alimentacao" onclick="expandImage(event, this.src)">
+                        </div>
+                        <input type="file" id="file-alimentacao" style="display: none;" accept="image/*" onchange="previewImage(event, 'img-alimentacao', 'txt-alimentacao', 'btn-alimentacao')">
+                        <span class="btn-alterar" id="btn-alimentacao" onclick="triggerUpload('file-alimentacao')">Trocar Imagem</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="card">
+                <h2>Estimativas de Trajeto (Google Maps)</h2>
+                <p style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 1rem; text-align: center;">Clique nas imagens para ampliar ou trocar.</p>
+                
+                <div class="image-slots-container">
+                    <div class="image-slot">
+                        <span>Rota de Ida</span>
+                        <div style="position: relative; width: 100%;">
+                            <img id="img-map-ida" src="https://i.ibb.co/8gn9ysMx/ida.png" alt="Estimativa Ida" onclick="expandImage(event, this.src)">
+                        </div>
+                        <input type="file" id="file-map-ida" style="display: none;" accept="image/*" onchange="previewImage(event, 'img-map-ida', null, null)">
+                        <span class="btn-alterar" style="display: block; margin-top: 10px;" onclick="triggerUpload('file-map-ida')">Trocar Imagem de Ida</span>
+                    </div>
+
+                    <div class="image-slot">
+                        <span>Rota de Volta</span>
+                        <div style="position: relative; width: 100%;">
+                            <img id="img-map-volta" src="https://i.ibb.co/5xc8djTT/volta.png" alt="Estimativa Volta" onclick="expandImage(event, this.src)">
+                        </div>
+                        <input type="file" id="file-map-volta" style="display: none;" accept="image/*" onchange="previewImage(event, 'img-map-volta', null, null)">
+                        <span class="btn-alterar" style="display: block; margin-top: 10px;" onclick="triggerUpload('file-map-volta')">Trocar Imagem de Volta</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="total-card">
+            <h2>Valor Total a Reembolsar:</h2>
+            <div class="total-value" id="display-total">R$ 0,00</div>
+        </div>
+    </div>
+
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="expandedImg">
+    </div>
+
+    <script>
+        const inputKm = document.getElementById('input-km');
+        const inputKml = document.getElementById('input-kml');
+        const inputLitro = document.getElementById('input-litro');
+        const inputTotalCombustivel = document.getElementById('total-combustivel');
+        const inputsValor = document.querySelectorAll('.valor-despesa');
+        const displayTotal = document.getElementById('display-total');
+
+        function calcularCombustivel() {
+            const km = parseFloat(inputKm.value) || 0;
+            const kml = parseFloat(inputKml.value) || 0;
+            const litro = parseFloat(inputLitro.value) || 0;
+            
+            let totalCombustivel = 0;
+            if (kml > 0) {
+                totalCombustivel = (km / kml) * litro;
+            }
+            
+            inputTotalCombustivel.value = totalCombustivel > 0 ? totalCombustivel.toFixed(2) : '';
+            calcularTotalGeral();
+        }
+
+        function calcularTotalGeral() {
+            let total = 0;
+            inputsValor.forEach(input => {
+                const valor = parseFloat(input.value);
+                if (!isNaN(valor)) total += valor;
+            });
+            displayTotal.textContent = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        inputKm.addEventListener('input', calcularCombustivel);
+        inputKml.addEventListener('input', calcularCombustivel);
+        inputLitro.addEventListener('input', calcularCombustivel);
+
+        inputsValor.forEach(input => {
+            if(input.id !== 'total-combustivel') input.addEventListener('input', calcularTotalGeral);
+        });
+
+        function triggerUpload(inputId) {
+            document.getElementById(inputId).click();
+        }
+
+        function previewImage(event, imgId, textId, btnId) {
+            const input = event.target;
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imgElement = document.getElementById(imgId);
+                    imgElement.src = e.target.result;
+                    imgElement.style.display = 'block';
+                    
+                    if(textId) document.getElementById(textId).style.display = 'none';
+                    if(btnId) document.getElementById(btnId).style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function expandImage(event, src) {
+            event.stopPropagation();
+            if(!src || src === window.location.href) return;
+            
+            const modal = document.getElementById("imageModal");
+            const modalImg = document.getElementById("expandedImg");
+            modal.style.display = "block";
+            modalImg.src = src;
+        }
+
+        function closeModal() {
+            document.getElementById("imageModal").style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById("imageModal");
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
